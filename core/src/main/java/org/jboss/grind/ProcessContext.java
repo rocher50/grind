@@ -23,4 +23,7 @@ package org.jboss.grind;
  */
 public interface ProcessContext {
 
+    <O> void pushOutcome(Class<O> outcomeType, O outcome) throws GrindException;
+
+    <O> O resolveOutcome(Class<O> outcomeType) throws GrindException;
 }
