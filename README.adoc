@@ -1,0 +1,6 @@
+:toc:
+:toc-placement!:
+
+= Grind
+
+toc::[]
