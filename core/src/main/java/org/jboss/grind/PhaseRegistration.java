@@ -23,7 +23,7 @@ package org.jboss.grind;
  */
 public interface PhaseRegistration {
 
-    void requiresInput(Class<?> inputType) throws GrindException;
+    void consumes(Class<?> inputType) throws GrindException;
 
-    void providesOutcome(Class<?> outcomeType) throws GrindException;
+    void provides(Class<?> outcomeType) throws GrindException;
 }

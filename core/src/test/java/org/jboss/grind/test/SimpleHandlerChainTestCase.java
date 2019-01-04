@@ -56,36 +56,36 @@ public class SimpleHandlerChainTestCase {
                 .addPhase(new PhaseHandler() {
                     @Override
                     public void register(PhaseRegistration registration) throws GrindException {
-                        registration.providesOutcome(TestResult.class);
-                        registration.requiresInput(Input1.class);
+                        registration.provides(TestResult.class);
+                        registration.consumes(Input1.class);
                     }
                     @Override
                     public void process(ProcessContext ctx) throws GrindException {
-                        final Input1 input1 = ctx.resolveOutcome(Input1.class);
-                        ctx.pushOutcome(TestResult.class, new TestResult(input1.input1));
+                        final Input1 input1 = ctx.consume(Input1.class);
+                        ctx.provide(TestResult.class, new TestResult(input1.input1));
                     }
                     })
                 .addPhase(new PhaseHandler() {
                     @Override
                     public void register(PhaseRegistration registration) throws GrindException {
-                        registration.providesOutcome(Input1.class);
-                        registration.requiresInput(Input2.class);
+                        registration.provides(Input1.class);
+                        registration.consumes(Input2.class);
                     }
 
                     @Override
                     public void process(ProcessContext ctx) throws GrindException {
-                        final Input2 input2 = ctx.resolveOutcome(Input2.class);
-                        ctx.pushOutcome(Input1.class, new Input1(input2.input2));
+                        final Input2 input2 = ctx.consume(Input2.class);
+                        ctx.provide(Input1.class, new Input1(input2.input2));
                     }})
                 .addPhase(new PhaseHandler() {
                     @Override
                     public void register(PhaseRegistration registration) throws GrindException {
-                        registration.providesOutcome(Input2.class);
+                        registration.provides(Input2.class);
                     }
 
                     @Override
                     public void process(ProcessContext ctx) throws GrindException {
-                        ctx.pushOutcome(Input2.class, new Input2("input2"));
+                        ctx.provide(Input2.class, new Input2("input2"));
                     }})
                 .build();
 

@@ -31,72 +31,74 @@ public class Grind {
 
     private class Context implements ProcessContext {
 
-        private final Map<Class<?>, Object> pushedOutcomes;
+        private final Map<Class<?>, Object> provided;
 
-
-        private Context(Map<Class<?>, Object> pushedOutcomes) {
-            this.pushedOutcomes = new HashMap<>(pushedOutcomes);
+        private Context(Map<Class<?>, Object> provided) {
+            this.provided = new HashMap<>(provided);
         }
 
         @Override
-        public <O> void pushOutcome(Class<O> outcomeType, O outcome) throws GrindException {
-            if(pushedOutcomes.put(outcomeType, outcome) != null) {
+        public <O> void provide(Class<O> type, O value) throws GrindException {
+            if(provided.put(type, value) != null) {
                 // let's for now be strict about it
-                throw new GrindException("Outcome of type " + outcomeType.getName() + " has already been provided");
+                throw new GrindException("Outcome of type " + type.getName() + " has already been provided");
             }
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <O> O resolveOutcome(Class<O> outcomeType) throws GrindException {
-            final Object outcome = pushedOutcomes.get(outcomeType);
-            if(outcome == null) {
-                throw new GrindException("Failed to resolve outcome of type " + outcomeType);
+        public <O> O consume(Class<O> type) throws GrindException {
+            final Object value = provided.get(type);
+            if(value == null) {
+                throw new GrindException("Failed to resolve outcome of type " + type);
             }
-            return (O) outcome;
+            return (O) value;
         }
     }
 
-    private final Map<Class<?>, List<PhaseDescription>> inputProviders;
-    private final Map<Class<?>, List<PhaseDescription>> outcomeProviders;
-    private Map<Class<?>, Object> pushedOutcomes = Collections.emptyMap();
+    private final Map<Class<?>, List<PhaseDescription>> providers;
+    private Map<Class<?>, Object> provided = Collections.emptyMap();
 
     protected Grind(GrindFactory factory) {
-        inputProviders = Collections.unmodifiableMap(factory.inputProviders);
-        outcomeProviders = Collections.unmodifiableMap(factory.outcomeProviders);
+        providers = Collections.unmodifiableMap(factory.outcomeProviders);
     }
 
-    public <O> Grind pushOutcome(Class<O> type, O outcome) throws GrindException {
-        if(pushedOutcomes.isEmpty()) {
-            pushedOutcomes = new HashMap<>(pushedOutcomes);
+    public <T> Grind provide(Class<T> type, T value) throws GrindException {
+        if(provided.isEmpty()) {
+            provided = new HashMap<>(provided);
         }
-        if(pushedOutcomes.put(type, outcome) != null) {
+        if(provided.put(type, value) != null) {
             // let's for now be strict about it
             throw new GrindException("Outcome of type " + type.getName() + " has already been provided");
         }
         return this;
     }
 
-    public <T> T resolve(Class<T> outcomeType) throws GrindException {
-        final List<PhaseDescription> phaseChain = resolvePhaseChain(outcomeType);
-        final ProcessContext ctx = new Context(pushedOutcomes);
+    @SuppressWarnings("unchecked")
+    public <T> T resolve(Class<T> type) throws GrindException {
+        final Object value = this.provided.get(type);
+        if(value != null) {
+            return (T) value;
+        }
+        final List<PhaseDescription> phaseChain = resolvePhaseChain(type);
+        final ProcessContext ctx = new Context(provided);
         for(PhaseDescription phaseDescr : phaseChain) {
             phaseDescr.handler.process(ctx);
         }
-        return ctx.resolveOutcome(outcomeType);
+        return ctx.consume(type);
     }
 
-    private <T> List<PhaseDescription> resolvePhaseChain(Class<T> outcomeType) throws GrindException {
-        final List<PhaseDescription> providers = outcomeProviders.get(outcomeType);
-        if(providers == null) {
-            throw new GrindException("No providers found for outcome type " + outcomeType.getName());
+    private <T> List<PhaseDescription> resolvePhaseChain(Class<T> type) throws GrindException {
+        final List<PhaseDescription> phases = providers.get(type);
+        if(phases == null) {
+            throw new GrindException("No providers found for outcome type " + type.getName());
         }
         List<PhaseDescription> chain = new ArrayList<>();
-        for(PhaseDescription phaseDescr : providers) {
+        for(PhaseDescription phaseDescr : phases) {
             resolvePhaseChain(chain, phaseDescr);
         }
         if(chain.isEmpty()) {
-            throw new GrindException("Failed to resolve phase chain for the outcome type " + outcomeType.getName());
+            throw new GrindException("Failed to resolve phase chain for the outcome type " + type.getName());
         }
         return chain;
     }
@@ -105,20 +107,20 @@ public class Grind {
         if(!phaseDescr.setFlag(PhaseDescription.VISITED)) {
             return false;
         }
-        if(phaseDescr.inputTypes.isEmpty()) {
+        if(phaseDescr.consumedTypes.isEmpty()) {
             chain.add(phaseDescr);
             return true;
         }
-        for(Class<?> inputType : phaseDescr.inputTypes) {
-            if(pushedOutcomes.containsKey(inputType)) {
+        for(Class<?> consumedType : phaseDescr.consumedTypes) {
+            if(provided.containsKey(consumedType)) {
                 continue;
             }
-            final List<PhaseDescription> providers = outcomeProviders.get(inputType);
-            if(providers == null) {
-                throw new GrindException("No provider found for input type " + inputType.getName());
+            final List<PhaseDescription> phases = providers.get(consumedType);
+            if(phases == null) {
+                throw new GrindException("No provider found for input type " + consumedType.getName());
             }
             boolean provided = false;
-            for(PhaseDescription provider : providers) {
+            for(PhaseDescription provider : phases) {
                 if(provided = provider.isFlagOn(PhaseDescription.IN_CHAIN)) {
                     break;
                 }
@@ -127,7 +129,7 @@ public class Grind {
                 continue;
             }
             final int originalChainLength = chain.size();
-            for(PhaseDescription provider : providers) {
+            for(PhaseDescription provider : phases) {
                 if(provided = resolvePhaseChain(chain, provider)) {
                     break;
                 }

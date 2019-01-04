@@ -44,34 +44,36 @@ public class GrindFactory {
         }
 
         @Override
-        public void requiresInput(Class<?> inputType) throws GrindException {
-            phaseDescr.addInputType(inputType);
-            List<PhaseDescription> providers = inputProviders.get(inputType);
-            if(providers == null) {
-                inputProviders.put(inputType, Collections.singletonList(phaseDescr));
+        public void consumes(Class<?> type) throws GrindException {
+            phaseDescr.addConsumedType(type);
+            /*
+            List<PhaseDescription> consumers = typeConsumers.get(inputType);
+            if(consumers == null) {
+                typeConsumers.put(inputType, Collections.singletonList(phaseDescr));
                 return;
             }
-            if(providers.size() == 1) {
+            if(consumers.size() == 1) {
                 final List<PhaseDescription> tmp = new ArrayList<>(2);
-                tmp.add(providers.get(0));
-                inputProviders.put(inputType, tmp);
-                providers = tmp;
+                tmp.add(consumers.get(0));
+                typeConsumers.put(inputType, tmp);
+                consumers = tmp;
             }
-            providers.add(phaseDescr);
+            consumers.add(phaseDescr);
+            */
         }
 
         @Override
-        public void providesOutcome(Class<?> outcomeType) throws GrindException {
-            phaseDescr.addOutcomeType(outcomeType);
-            List<PhaseDescription> providers = outcomeProviders.get(outcomeType);
+        public void provides(Class<?> type) throws GrindException {
+            phaseDescr.addProvidedType(type);
+            List<PhaseDescription> providers = outcomeProviders.get(type);
             if(providers == null) {
-                outcomeProviders.put(outcomeType, Collections.singletonList(phaseDescr));
+                outcomeProviders.put(type, Collections.singletonList(phaseDescr));
                 return;
             }
             if(providers.size() == 1) {
                 final List<PhaseDescription> tmp = new ArrayList<>(2);
                 tmp.add(providers.get(0));
-                outcomeProviders.put(outcomeType, tmp);
+                outcomeProviders.put(type, tmp);
                 providers = tmp;
             }
             providers.add(phaseDescr);
@@ -79,7 +81,7 @@ public class GrindFactory {
     }
 
     private Registration registration = new Registration();
-    Map<Class<?>, List<PhaseDescription>> inputProviders = new HashMap<>();
+    //Map<Class<?>, List<PhaseDescription>> typeConsumers = new HashMap<>();
     Map<Class<?>, List<PhaseDescription>> outcomeProviders = new HashMap<>();
 
     private GrindFactory() {

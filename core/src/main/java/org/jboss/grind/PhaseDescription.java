@@ -32,8 +32,8 @@ public class PhaseDescription {
 
     protected final int id;
     protected final PhaseHandler handler;
-    protected List<Class<?>> inputTypes = Collections.emptyList();
-    protected List<Class<?>> outcomeTypes = Collections.emptyList();
+    protected List<Class<?>> consumedTypes = Collections.emptyList();
+    protected List<Class<?>> providedTypes = Collections.emptyList();
     private int flags;
 
     protected PhaseDescription(int id, PhaseHandler handler) {
@@ -41,18 +41,18 @@ public class PhaseDescription {
         this.handler = handler;
     }
 
-    protected void addInputType(Class<?> inputType) {
-        if(inputTypes.isEmpty()) {
-            inputTypes = new ArrayList<>(1);
+    protected void addConsumedType(Class<?> consumedType) {
+        if(consumedTypes.isEmpty()) {
+            consumedTypes = new ArrayList<>(1);
         }
-        inputTypes.add(inputType);
+        consumedTypes.add(consumedType);
     }
 
-    protected void addOutcomeType(Class<?> outcomeType) {
-        if(outcomeTypes.isEmpty()) {
-            outcomeTypes = new ArrayList<>(1);
+    protected void addProvidedType(Class<?> providedType) {
+        if(providedTypes.isEmpty()) {
+            providedTypes = new ArrayList<>(1);
         }
-        outcomeTypes.add(outcomeType);
+        providedTypes.add(providedType);
     }
 
     boolean isFlagOn(int flag) {

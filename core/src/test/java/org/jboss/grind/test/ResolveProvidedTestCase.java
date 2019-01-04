@@ -15,15 +15,27 @@
  * limitations under the License.
  */
 
-package org.jboss.grind;
+package org.jboss.grind.test;
+
+import static org.junit.Assert.assertEquals;
+
+import org.jboss.grind.Grind;
+import org.jboss.grind.GrindFactory;
+import org.junit.Test;
 
 /**
  *
  * @author Alexey Loubyansky
  */
-public interface ProcessContext {
+public class ResolveProvidedTestCase {
 
-    <O> void provide(Class<O> outcomeType, O outcome) throws GrindException;
+    @Test
+    public void mainTest() throws Exception {
 
-    <O> O consume(Class<O> outcomeType) throws GrindException;
+        final Grind grind = GrindFactory.getInstance()
+                .build();
+
+        grind.provide(TestResult.class, new TestResult("provided"));
+        assertEquals(new TestResult("provided"), grind.resolve(TestResult.class));
+    }
 }

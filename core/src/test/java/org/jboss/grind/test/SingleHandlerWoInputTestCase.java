@@ -40,11 +40,11 @@ public class SingleHandlerWoInputTestCase {
                 .addPhase(new PhaseHandler() {
                     @Override
                     public void register(PhaseRegistration registration) throws GrindException {
-                        registration.providesOutcome(TestResult.class);
+                        registration.provides(TestResult.class);
                     }
                     @Override
                     public void process(ProcessContext ctx) throws GrindException {
-                        ctx.pushOutcome(TestResult.class, new TestResult("success"));
+                        ctx.provide(TestResult.class, new TestResult("success"));
                     }
                     })
                 .build();
