@@ -19,11 +19,11 @@ package org.jboss.grind.test;
 
 import static org.junit.Assert.assertEquals;
 
-import org.jboss.grind.PhaseRouter;
 import org.jboss.grind.GrindException;
-import org.jboss.grind.PhaseRouterFactory;
 import org.jboss.grind.PhaseHandler;
 import org.jboss.grind.PhaseRegistration;
+import org.jboss.grind.PhaseRouter;
+import org.jboss.grind.PhaseRouterFactory;
 import org.jboss.grind.ProcessContext;
 import org.junit.Test;
 
@@ -31,24 +31,26 @@ import org.junit.Test;
  *
  * @author Alexey Loubyansky
  */
-public class SingleHandlerWoInputTestCase {
+public class ResolveProvidedSkippingHandlerTestCase {
 
     @Test
     public void mainTest() throws Exception {
 
         final PhaseRouter router = PhaseRouterFactory.getInstance()
                 .addPhase(new PhaseHandler() {
+
                     @Override
                     public void register(PhaseRegistration registration) throws GrindException {
                         registration.provides(TestResult.class);
                     }
+
                     @Override
                     public void process(ProcessContext ctx) throws GrindException {
-                        ctx.provide(TestResult.class, new TestResult("success"));
-                    }
-                    })
+                        ctx.provide(new TestResult("phase"));
+                    }})
                 .build();
 
-        assertEquals(new TestResult("success"), router.consume(TestResult.class));
+        router.provide(new TestResult("provided"));
+        assertEquals(new TestResult("provided"), router.consume(TestResult.class));
     }
 }

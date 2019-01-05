@@ -20,9 +20,9 @@ package org.jboss.grind.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import org.jboss.grind.Grind;
+import org.jboss.grind.PhaseRouter;
 import org.jboss.grind.GrindException;
-import org.jboss.grind.GrindFactory;
+import org.jboss.grind.PhaseRouterFactory;
 import org.jboss.grind.PhaseHandler;
 import org.jboss.grind.PhaseRegistration;
 import org.jboss.grind.ProcessContext;
@@ -86,7 +86,7 @@ public class CircularProvidersDepsTestCase {
     @Test
     public void mainTest() throws Exception {
 
-        final Grind grind = GrindFactory.getInstance()
+        final PhaseRouter router = PhaseRouterFactory.getInstance()
                 .addPhase(new PhaseHandler() {
                     @Override
                     public void register(PhaseRegistration registration) throws GrindException {
@@ -120,7 +120,7 @@ public class CircularProvidersDepsTestCase {
                 .build();
 
         try {
-            grind.resolve(Type1.class);
+            router.consume(Type1.class);
             fail();
         } catch(GrindException e) {
             assertEquals("Failed to resolve phase flow for the outcome of type " + Type1.class.getName(), e.getMessage());

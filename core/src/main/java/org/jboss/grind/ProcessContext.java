@@ -23,7 +23,9 @@ package org.jboss.grind;
  */
 public interface ProcessContext {
 
-    <O> void provide(Class<O> outcomeType, O outcome) throws GrindException;
+    void provide(Object value) throws GrindException;
 
-    <O> O consume(Class<O> outcomeType) throws GrindException;
+    <T> void provide(Class<T> type, T value) throws GrindException;
+
+    <T> T consume(Class<T> type) throws GrindException;
 }

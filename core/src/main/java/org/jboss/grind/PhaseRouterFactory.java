@@ -27,10 +27,10 @@ import java.util.Map;
  *
  * @author Alexey Loubyansky
  */
-public class GrindFactory {
+public class PhaseRouterFactory {
 
-    public static GrindFactory getInstance() {
-        return new GrindFactory();
+    public static PhaseRouterFactory getInstance() {
+        return new PhaseRouterFactory();
     }
 
     private class Registration implements PhaseRegistration {
@@ -46,53 +46,38 @@ public class GrindFactory {
         @Override
         public void consumes(Class<?> type) throws GrindException {
             phaseDescr.addConsumedType(type);
-            /*
-            List<PhaseDescription> consumers = typeConsumers.get(inputType);
-            if(consumers == null) {
-                typeConsumers.put(inputType, Collections.singletonList(phaseDescr));
-                return;
-            }
-            if(consumers.size() == 1) {
-                final List<PhaseDescription> tmp = new ArrayList<>(2);
-                tmp.add(consumers.get(0));
-                typeConsumers.put(inputType, tmp);
-                consumers = tmp;
-            }
-            consumers.add(phaseDescr);
-            */
         }
 
         @Override
         public void provides(Class<?> type) throws GrindException {
             phaseDescr.addProvidedType(type);
-            List<PhaseDescription> providers = outcomeProviders.get(type);
-            if(providers == null) {
-                outcomeProviders.put(type, Collections.singletonList(phaseDescr));
+            List<PhaseDescription> typeProviders = providers.get(type);
+            if(typeProviders == null) {
+                providers.put(type, Collections.singletonList(phaseDescr));
                 return;
             }
-            if(providers.size() == 1) {
+            if(typeProviders.size() == 1) {
                 final List<PhaseDescription> tmp = new ArrayList<>(2);
-                tmp.add(providers.get(0));
-                outcomeProviders.put(type, tmp);
-                providers = tmp;
+                tmp.add(typeProviders.get(0));
+                providers.put(type, tmp);
+                typeProviders = tmp;
             }
-            providers.add(phaseDescr);
+            typeProviders.add(phaseDescr);
         }
     }
 
     private Registration registration = new Registration();
-    //Map<Class<?>, List<PhaseDescription>> typeConsumers = new HashMap<>();
-    Map<Class<?>, List<PhaseDescription>> outcomeProviders = new HashMap<>();
+    Map<Class<?>, List<PhaseDescription>> providers = new HashMap<>();
 
-    private GrindFactory() {
+    private PhaseRouterFactory() {
     }
 
-    public GrindFactory addPhase(PhaseHandler handler) throws GrindException {
+    public PhaseRouterFactory addPhase(PhaseHandler handler) throws GrindException {
         registration.register(handler);
         return this;
     }
 
-    public Grind build() throws GrindException {
-        return new Grind(this);
+    public PhaseRouter build() throws GrindException {
+        return new PhaseRouter(this);
     }
 }

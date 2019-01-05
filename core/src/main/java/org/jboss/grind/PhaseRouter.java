@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * @author Alexey Loubyansky
  */
-public class Grind {
+public class PhaseRouter implements ProcessContext {
 
     private class Context implements ProcessContext {
 
@@ -35,6 +35,11 @@ public class Grind {
 
         private Context(Map<Class<?>, Object> provided) {
             this.provided = new HashMap<>(provided);
+        }
+
+        @SuppressWarnings("unchecked")
+        public void provide(Object value) throws GrindException {
+            provide((Class<Object>)value.getClass(), value);
         }
 
         @Override
@@ -59,16 +64,16 @@ public class Grind {
     private final Map<Class<?>, List<PhaseDescription>> providers;
     private Map<Class<?>, Object> provided = Collections.emptyMap();
 
-    protected Grind(GrindFactory factory) {
-        providers = Collections.unmodifiableMap(factory.outcomeProviders);
+    protected PhaseRouter(PhaseRouterFactory factory) {
+        providers = Collections.unmodifiableMap(factory.providers);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> Grind provide(T value) throws GrindException {
-        return provide((Class<T>)value.getClass(), value);
+    public void provide(Object value) throws GrindException {
+        provide((Class<Object>)value.getClass(), value);
     }
 
-    public <T> Grind provide(Class<T> type, T value) throws GrindException {
+    public <T> void provide(Class<T> type, T value) throws GrindException {
         if(provided.isEmpty()) {
             provided = new HashMap<>(provided);
         }
@@ -76,11 +81,10 @@ public class Grind {
             // let's for now be strict about it
             throw new GrindException("Outcome of type " + type.getName() + " has already been provided");
         }
-        return this;
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T resolve(Class<T> type) throws GrindException {
+    public <T> T consume(Class<T> type) throws GrindException {
         final Object value = this.provided.get(type);
         if(value != null) {
             return (T) value;
@@ -124,7 +128,7 @@ public class Grind {
                     }
                     boolean provided = false;
                     for (PhaseDescription provider : phases) {
-                        if (provided = provider.isFlagOn(PhaseDescription.IN_CHAIN)) {
+                        if (provided = provider.isFlagOn(PhaseDescription.IN_LINE)) {
                             break;
                         }
                     }
@@ -138,7 +142,7 @@ public class Grind {
                         }
                         if (chain.size() > originalChainLength) {
                             for (int i = chain.size() - 1; i >= originalChainLength; --i) {
-                                chain.remove(i).clearFlag(PhaseDescription.IN_CHAIN);
+                                chain.remove(i).clearFlag(PhaseDescription.IN_LINE);
                             }
                         }
                     }
@@ -152,7 +156,7 @@ public class Grind {
             phaseDescr.clearFlag(PhaseDescription.VISITED);
         }
         chain.add(phaseDescr);
-        phaseDescr.setFlag(PhaseDescription.IN_CHAIN);
+        phaseDescr.setFlag(PhaseDescription.IN_LINE);
         return true;
     }
 }

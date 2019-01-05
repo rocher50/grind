@@ -27,8 +27,8 @@ import java.util.List;
  */
 public class PhaseDescription {
 
-    static final int IN_CHAIN = 0b000001;
-    static final int VISITED  = 0b000010;
+    static final int IN_LINE = 0b000001;
+    static final int VISITED = 0b000010;
 
     protected final int id;
     protected final PhaseHandler handler;

@@ -19,9 +19,9 @@ package org.jboss.grind.test;
 
 import static org.junit.Assert.assertEquals;
 
-import org.jboss.grind.Grind;
+import org.jboss.grind.PhaseRouter;
 import org.jboss.grind.GrindException;
-import org.jboss.grind.GrindFactory;
+import org.jboss.grind.PhaseRouterFactory;
 import org.jboss.grind.PhaseHandler;
 import org.jboss.grind.PhaseRegistration;
 import org.jboss.grind.ProcessContext;
@@ -52,7 +52,7 @@ public class SimpleHandlerChainTestCase {
     @Test
     public void mainTest() throws Exception {
 
-        final Grind grind = GrindFactory.getInstance()
+        final PhaseRouter router = PhaseRouterFactory.getInstance()
                 .addPhase(new PhaseHandler() {
                     @Override
                     public void register(PhaseRegistration registration) throws GrindException {
@@ -89,6 +89,6 @@ public class SimpleHandlerChainTestCase {
                     }})
                 .build();
 
-        assertEquals(new TestResult("input2"), grind.resolve(TestResult.class));
+        assertEquals(new TestResult("input2"), router.consume(TestResult.class));
     }
 }

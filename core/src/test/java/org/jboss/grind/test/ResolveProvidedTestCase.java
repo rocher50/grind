@@ -19,8 +19,8 @@ package org.jboss.grind.test;
 
 import static org.junit.Assert.assertEquals;
 
-import org.jboss.grind.Grind;
-import org.jboss.grind.GrindFactory;
+import org.jboss.grind.PhaseRouter;
+import org.jboss.grind.PhaseRouterFactory;
 import org.junit.Test;
 
 /**
@@ -32,10 +32,10 @@ public class ResolveProvidedTestCase {
     @Test
     public void mainTest() throws Exception {
 
-        final Grind grind = GrindFactory.getInstance()
+        final PhaseRouter router = PhaseRouterFactory.getInstance()
                 .build();
 
-        grind.provide(TestResult.class, new TestResult("provided"));
-        assertEquals(new TestResult("provided"), grind.resolve(TestResult.class));
+        router.provide(new TestResult("provided"));
+        assertEquals(new TestResult("provided"), router.consume(TestResult.class));
     }
 }
