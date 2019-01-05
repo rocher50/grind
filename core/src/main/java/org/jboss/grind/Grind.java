@@ -63,6 +63,11 @@ public class Grind {
         providers = Collections.unmodifiableMap(factory.outcomeProviders);
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> Grind provide(T value) throws GrindException {
+        return provide((Class<T>)value.getClass(), value);
+    }
+
     public <T> Grind provide(Class<T> type, T value) throws GrindException {
         if(provided.isEmpty()) {
             provided = new HashMap<>(provided);
@@ -98,7 +103,7 @@ public class Grind {
             resolvePhaseChain(chain, phaseDescr);
         }
         if(chain.isEmpty()) {
-            throw new GrindException("Failed to resolve phase chain for the outcome type " + type.getName());
+            throw new GrindException("Failed to resolve phase flow for the outcome of type " + type.getName());
         }
         return chain;
     }
@@ -107,45 +112,46 @@ public class Grind {
         if(!phaseDescr.setFlag(PhaseDescription.VISITED)) {
             return false;
         }
-        if(phaseDescr.consumedTypes.isEmpty()) {
-            chain.add(phaseDescr);
-            return true;
-        }
-        for(Class<?> consumedType : phaseDescr.consumedTypes) {
-            if(provided.containsKey(consumedType)) {
-                continue;
-            }
-            final List<PhaseDescription> phases = providers.get(consumedType);
-            if(phases == null) {
-                throw new GrindException("No provider found for input type " + consumedType.getName());
-            }
-            boolean provided = false;
-            for(PhaseDescription provider : phases) {
-                if(provided = provider.isFlagOn(PhaseDescription.IN_CHAIN)) {
-                    break;
-                }
-            }
-            if(provided) {
-                continue;
-            }
-            final int originalChainLength = chain.size();
-            for(PhaseDescription provider : phases) {
-                if(provided = resolvePhaseChain(chain, provider)) {
-                    break;
-                }
-                if(chain.size() > originalChainLength) {
-                    for(int i = chain.size() - 1; i >= originalChainLength; --i) {
-                        chain.remove(i).clearFlag(PhaseDescription.IN_CHAIN);
+        try {
+            if (!phaseDescr.consumedTypes.isEmpty()) {
+                for (Class<?> consumedType : phaseDescr.consumedTypes) {
+                    if (provided.containsKey(consumedType)) {
+                        continue;
                     }
+                    final List<PhaseDescription> phases = providers.get(consumedType);
+                    if (phases == null) {
+                        return false;
+                    }
+                    boolean provided = false;
+                    for (PhaseDescription provider : phases) {
+                        if (provided = provider.isFlagOn(PhaseDescription.IN_CHAIN)) {
+                            break;
+                        }
+                    }
+                    if (provided) {
+                        continue;
+                    }
+                    final int originalChainLength = chain.size();
+                    for (PhaseDescription provider : phases) {
+                        if (provided = resolvePhaseChain(chain, provider)) {
+                            break;
+                        }
+                        if (chain.size() > originalChainLength) {
+                            for (int i = chain.size() - 1; i >= originalChainLength; --i) {
+                                chain.remove(i).clearFlag(PhaseDescription.IN_CHAIN);
+                            }
+                        }
+                    }
+                    if (provided) {
+                        continue;
+                    }
+                    return false;
                 }
             }
-            if(provided) {
-                continue;
-            }
-            return false;
+        } finally {
+            phaseDescr.clearFlag(PhaseDescription.VISITED);
         }
         chain.add(phaseDescr);
-        phaseDescr.clearFlag(PhaseDescription.VISITED);
         phaseDescr.setFlag(PhaseDescription.IN_CHAIN);
         return true;
     }
