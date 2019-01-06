@@ -20,11 +20,11 @@ package org.jboss.grind.test;
 import static org.junit.Assert.assertEquals;
 
 import org.jboss.grind.PhaseRouter;
-import org.jboss.grind.GrindException;
+import org.jboss.grind.PhaseRouterException;
 import org.jboss.grind.PhaseRouterFactory;
 import org.jboss.grind.PhaseHandler;
 import org.jboss.grind.PhaseRegistration;
-import org.jboss.grind.ProcessContext;
+import org.jboss.grind.PhaseProcessingContext;
 import org.junit.Test;
 
 /**
@@ -55,36 +55,36 @@ public class SimpleHandlerChainTestCase {
         final PhaseRouter router = PhaseRouterFactory.getInstance()
                 .addPhase(new PhaseHandler() {
                     @Override
-                    public void register(PhaseRegistration registration) throws GrindException {
+                    public void register(PhaseRegistration registration) throws PhaseRouterException {
                         registration.provides(TestResult.class);
                         registration.consumes(Input1.class);
                     }
                     @Override
-                    public void process(ProcessContext ctx) throws GrindException {
+                    public void process(PhaseProcessingContext ctx) throws PhaseRouterException {
                         final Input1 input1 = ctx.consume(Input1.class);
                         ctx.provide(TestResult.class, new TestResult(input1.input1));
                     }
                     })
                 .addPhase(new PhaseHandler() {
                     @Override
-                    public void register(PhaseRegistration registration) throws GrindException {
+                    public void register(PhaseRegistration registration) throws PhaseRouterException {
                         registration.provides(Input1.class);
                         registration.consumes(Input2.class);
                     }
 
                     @Override
-                    public void process(ProcessContext ctx) throws GrindException {
+                    public void process(PhaseProcessingContext ctx) throws PhaseRouterException {
                         final Input2 input2 = ctx.consume(Input2.class);
                         ctx.provide(Input1.class, new Input1(input2.input2));
                     }})
                 .addPhase(new PhaseHandler() {
                     @Override
-                    public void register(PhaseRegistration registration) throws GrindException {
+                    public void register(PhaseRegistration registration) throws PhaseRouterException {
                         registration.provides(Input2.class);
                     }
 
                     @Override
-                    public void process(ProcessContext ctx) throws GrindException {
+                    public void process(PhaseProcessingContext ctx) throws PhaseRouterException {
                         ctx.provide(Input2.class, new Input2("input2"));
                     }})
                 .build();

@@ -17,22 +17,24 @@
 
 package org.jboss.grind;
 
+import java.util.List;
+
 /**
  *
  * @author Alexey Loubyansky
  */
-public class GrindException extends Exception {
+public class Errors {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-
-    public GrindException(String message) {
-        super(message);
-    }
-
-    public GrindException(Throwable cause) {
-        super(cause);
+    public static String handlerNotProvidedOutcomes(PhaseHandler handler, List<Class<?>> missingTypes) {
+        final StringBuilder buf = new StringBuilder();
+        buf.append("Handler ").append(handler.getClass().getName());
+        buf.append(" has not provided outcomes of types: ");
+        buf.append(missingTypes.get(0));
+        if(missingTypes.size() > 1) {
+            for(int i = 0; i < missingTypes.size(); ++i) {
+                buf.append(", ").append(missingTypes.get(i).getClass().getName());
+            }
+        }
+        return buf.toString();
     }
 }

@@ -18,12 +18,29 @@
 package org.jboss.grind;
 
 /**
+ * Phase registration callback.
+ *
+ * Allows phase handlers to declare what they consume and what they provide.
  *
  * @author Alexey Loubyansky
  */
 public interface PhaseRegistration {
 
-    void consumes(Class<?> inputType) throws GrindException;
+    /**
+     * Invoked by a phase handler to declare its dependency on
+     * the outcome of a specific type.
+     *
+     * @param inputType  outcome type the handler expects to be available
+     * @throws PhaseRouterException  in case of a failure
+     */
+    void consumes(Class<?> inputType) throws PhaseRouterException;
 
-    void provides(Class<?> outcomeType) throws GrindException;
+    /**
+     * Invoked by a phase handler to declare it provides an outcome
+     * of a specific type.
+     *
+     * @param outcomeType  outcome type the handler provides
+     * @throws PhaseRouterException  in case of a failure
+     */
+    void provides(Class<?> outcomeType) throws PhaseRouterException;
 }

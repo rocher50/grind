@@ -18,10 +18,14 @@
 package org.jboss.grind.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.util.Collections;
 
 import org.jboss.grind.PhaseRouter;
 import org.jboss.grind.PhaseRouterException;
 import org.jboss.grind.PhaseRouterFactory;
+import org.jboss.grind.Errors;
 import org.jboss.grind.PhaseHandler;
 import org.jboss.grind.PhaseRegistration;
 import org.jboss.grind.PhaseProcessingContext;
@@ -31,24 +35,39 @@ import org.junit.Test;
  *
  * @author Alexey Loubyansky
  */
-public class SingleHandlerWoInputTestCase {
+public class HandlerNotProvidingPromisedOutcomeCheckOutcomeTrueTestCase {
+
+    public static class OtherOutcome extends TestResult {
+
+    }
 
     @Test
     public void mainTest() throws Exception {
 
+        final PhaseHandler phaseHandler = new PhaseHandler() {
+            @Override
+            public void register(PhaseRegistration registration) throws PhaseRouterException {
+                registration.provides(TestResult.class);
+                registration.provides(OtherOutcome.class);
+            }
+
+            @Override
+            public void process(PhaseProcessingContext ctx) throws PhaseRouterException {
+                ctx.provide(TestResult.class, new TestResult("success"));
+            }
+        };
+
         final PhaseRouter router = PhaseRouterFactory.getInstance()
-                .addPhase(new PhaseHandler() {
-                    @Override
-                    public void register(PhaseRegistration registration) throws PhaseRouterException {
-                        registration.provides(TestResult.class);
-                    }
-                    @Override
-                    public void process(PhaseProcessingContext ctx) throws PhaseRouterException {
-                        ctx.provide(TestResult.class, new TestResult("success"));
-                    }
-                    })
+                .addPhase(phaseHandler)
                 .build();
 
-        assertEquals(new TestResult("success"), router.consume(TestResult.class));
+        router.setCheckHandlerOutcome(true);
+
+        try {
+            router.consume(TestResult.class);
+            fail();
+        } catch(PhaseRouterException e) {
+            assertEquals(Errors.handlerNotProvidedOutcomes(phaseHandler, Collections.singletonList(OtherOutcome.class)), e.getMessage());
+        }
     }
 }

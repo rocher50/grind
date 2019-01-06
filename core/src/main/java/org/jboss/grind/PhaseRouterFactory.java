@@ -24,11 +24,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Phase router factory.
  *
  * @author Alexey Loubyansky
  */
 public class PhaseRouterFactory {
 
+    /**
+     * Factory instance
+     *
+     * @return  factory instance
+     */
     public static PhaseRouterFactory getInstance() {
         return new PhaseRouterFactory();
     }
@@ -38,18 +44,18 @@ public class PhaseRouterFactory {
         private int phasesTotal;
         PhaseDescription phaseDescr;
 
-        void register(PhaseHandler handler) throws GrindException {
+        void register(PhaseHandler handler) throws PhaseRouterException {
             this.phaseDescr = new PhaseDescription(++phasesTotal, handler);
             handler.register(this);
         }
 
         @Override
-        public void consumes(Class<?> type) throws GrindException {
+        public void consumes(Class<?> type) throws PhaseRouterException {
             phaseDescr.addConsumedType(type);
         }
 
         @Override
-        public void provides(Class<?> type) throws GrindException {
+        public void provides(Class<?> type) throws PhaseRouterException {
             phaseDescr.addProvidedType(type);
             List<PhaseDescription> typeProviders = providers.get(type);
             if(typeProviders == null) {
@@ -68,16 +74,42 @@ public class PhaseRouterFactory {
 
     private Registration registration = new Registration();
     Map<Class<?>, List<PhaseDescription>> providers = new HashMap<>();
+    boolean checkHandlerOutcome = false;
 
     private PhaseRouterFactory() {
     }
 
-    public PhaseRouterFactory addPhase(PhaseHandler handler) throws GrindException {
+    /**
+     * Whether to check that handlers actually provide the outcomes
+     * they declared during registration
+     *
+     * @param checkHandlerOutcome whether to check handler outcomes
+     * @return  this factory instance
+     */
+    public PhaseRouterFactory setCheckHandlerOutcome(boolean checkHandlerOutcome) {
+        this.checkHandlerOutcome = checkHandlerOutcome;
+        return this;
+    }
+
+    /**
+     * Adds a phase handler
+     *
+     * @param handler  phase handler
+     * @return  this factory instance
+     * @throws PhaseRouterException  in case of a failure
+     */
+    public PhaseRouterFactory addPhase(PhaseHandler handler) throws PhaseRouterException {
         registration.register(handler);
         return this;
     }
 
-    public PhaseRouter build() throws GrindException {
+    /**
+     * Creates a new instance of PhaseRouter
+     *
+     * @return  PhaseRouter instance
+     * @throws PhaseRouterException  in case of a failure
+     */
+    public PhaseRouter build() throws PhaseRouterException {
         return new PhaseRouter(this);
     }
 }

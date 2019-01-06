@@ -18,12 +18,26 @@
 package org.jboss.grind;
 
 /**
+ * Phase handler
  *
  * @author Alexey Loubyansky
  */
 public interface PhaseHandler {
 
-    void register(PhaseRegistration registration) throws GrindException;
+    /**
+     * Invoked during when a handler is added to the phase router.
+     * This method allows to register consumed and provided outcome types.
+     *
+     * @param registration  registration callback
+     * @throws PhaseRouterException  in case of a failure
+     */
+    void register(PhaseRegistration registration) throws PhaseRouterException;
 
-    void process(ProcessContext ctx) throws GrindException;
+    /**
+     * Invoked by the router to process the phase.
+     *
+     * @param ctx  phase processing context
+     * @throws PhaseRouterException  in case of a failure
+     */
+    void process(PhaseProcessingContext ctx) throws PhaseRouterException;
 }

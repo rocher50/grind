@@ -31,7 +31,11 @@ import org.junit.Test;
  *
  * @author Alexey Loubyansky
  */
-public class SingleHandlerWoInputTestCase {
+public class HandlerNotProvidingPromisedOutcomeCheckOutcomeFalseTestCase {
+
+    public static class OtherOutcome extends TestResult {
+
+    }
 
     @Test
     public void mainTest() throws Exception {
@@ -41,6 +45,7 @@ public class SingleHandlerWoInputTestCase {
                     @Override
                     public void register(PhaseRegistration registration) throws PhaseRouterException {
                         registration.provides(TestResult.class);
+                        registration.provides(OtherOutcome.class);
                     }
                     @Override
                     public void process(PhaseProcessingContext ctx) throws PhaseRouterException {

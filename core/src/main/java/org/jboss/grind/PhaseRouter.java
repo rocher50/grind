@@ -24,12 +24,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Includes a set of phase handlers, allows to provide additional input
+ * and consume outcomes of specific types by resolving the phases and the
+ * order in which they have to be processed to produce the requested outcome.
  *
  * @author Alexey Loubyansky
  */
-public class PhaseRouter implements ProcessContext {
+public class PhaseRouter {
 
-    private class Context implements ProcessContext {
+    private class Context implements PhaseProcessingContext {
 
         private final Map<Class<?>, Object> provided;
 
@@ -37,82 +40,142 @@ public class PhaseRouter implements ProcessContext {
             this.provided = new HashMap<>(provided);
         }
 
-        @SuppressWarnings("unchecked")
-        public void provide(Object value) throws GrindException {
-            provide((Class<Object>)value.getClass(), value);
-        }
-
         @Override
-        public <O> void provide(Class<O> type, O value) throws GrindException {
+        public <O> void provide(Class<O> type, O value) throws PhaseRouterException {
             if(provided.put(type, value) != null) {
                 // let's for now be strict about it
-                throw new GrindException("Outcome of type " + type.getName() + " has already been provided");
+                throw new PhaseRouterException("Outcome of type " + type.getName() + " has already been provided");
             }
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <O> O consume(Class<O> type) throws GrindException {
+        public <O> O consume(Class<O> type) throws PhaseRouterException {
             final Object value = provided.get(type);
             if(value == null) {
-                throw new GrindException("Failed to resolve outcome of type " + type);
+                throw new PhaseRouterException("Failed to resolve outcome of type " + type);
             }
             return (O) value;
+        }
+
+        @Override
+        public boolean isAvailable(Class<?> type) {
+            return provided.containsKey(type);
         }
     }
 
     private final Map<Class<?>, List<PhaseDescription>> providers;
     private Map<Class<?>, Object> provided = Collections.emptyMap();
+    private boolean checkHandlerOutcome;
 
     protected PhaseRouter(PhaseRouterFactory factory) {
         providers = Collections.unmodifiableMap(factory.providers);
+        checkHandlerOutcome = factory.checkHandlerOutcome;
     }
 
+    /**
+     * Whether to check that handlers actually provide the outcomes
+     * they declared during registration
+     *
+     * @param checkHandlerOutcome  whether to check handler outcome
+     */
+    public void setCheckHandlerOutcome(boolean checkHandlerOutcome) {
+        this.checkHandlerOutcome = checkHandlerOutcome;
+    }
+
+    /**
+     * Provides an outcome for consumption by other handlers
+     *
+     * @param value  outcome
+     * @throws PhaseRouterException  in case of a failure
+     */
     @SuppressWarnings("unchecked")
-    public void provide(Object value) throws GrindException {
+    public void provide(Object value) throws PhaseRouterException {
         provide((Class<Object>)value.getClass(), value);
     }
 
-    public <T> void provide(Class<T> type, T value) throws GrindException {
+    /**
+     * Provides a value that can be consumed by phase handlers.
+     */
+    public <T> void provide(Class<T> type, T value) throws PhaseRouterException {
         if(provided.isEmpty()) {
             provided = new HashMap<>(provided);
         }
         if(provided.put(type, value) != null) {
             // let's for now be strict about it
-            throw new GrindException("Outcome of type " + type.getName() + " has already been provided");
+            throw new PhaseRouterException("Outcome of type " + type.getName() + " has already been provided");
         }
     }
 
+    /**
+     * Consumes a value of the specified type by processing the necessary phases
+     */
     @SuppressWarnings("unchecked")
-    public <T> T consume(Class<T> type) throws GrindException {
+    public <T> T consume(Class<T> type) throws PhaseRouterException {
         final Object value = this.provided.get(type);
         if(value != null) {
             return (T) value;
         }
         final List<PhaseDescription> phaseChain = resolvePhaseChain(type);
-        final ProcessContext ctx = new Context(provided);
+        final Context ctx = new Context(provided);
         for(PhaseDescription phaseDescr : phaseChain) {
             phaseDescr.handler.process(ctx);
+            if(checkHandlerOutcome && !phaseDescr.providedTypes.isEmpty()) {
+                List<Class<?>> missingTypes = null;
+                for(Class<?> providedType : phaseDescr.providedTypes) {
+                    if(!ctx.isAvailable(providedType)) {
+                        if(missingTypes == null) {
+                            missingTypes = new ArrayList<>(1);
+                        }
+                        missingTypes.add(providedType);
+                    }
+                }
+                if(missingTypes != null) {
+                    throw new PhaseRouterException(Errors.handlerNotProvidedOutcomes(phaseDescr.handler, missingTypes));
+                }
+            }
         }
         return ctx.consume(type);
     }
 
-    private <T> List<PhaseDescription> resolvePhaseChain(Class<T> type) throws GrindException {
+    /**
+     * Provides certain values and consumes a value of the specified type
+     * by processing the necessary phases
+     *
+     * @param type  type of the consumed outcome
+     * @param provided  provided values
+     * @return  outcome
+     * @throws PhaseRouterException  in case of a failure
+     */
+    public <T> T consume(Class<T> type, Object... provided) throws PhaseRouterException {
+        if(provided.length > 0) {
+            for(Object o : provided) {
+                provide(o);
+            }
+        }
+        return consume(type);
+    }
+
+    public boolean isAvailable(Class<?> type) {
+        return provided.containsKey(type);
+    }
+
+    private <T> List<PhaseDescription> resolvePhaseChain(Class<T> type) throws PhaseRouterException {
         final List<PhaseDescription> phases = providers.get(type);
         if(phases == null) {
-            throw new GrindException("No providers found for outcome type " + type.getName());
+            throw new PhaseRouterException("No providers found for outcome type " + type.getName());
         }
         List<PhaseDescription> chain = new ArrayList<>();
         for(PhaseDescription phaseDescr : phases) {
             resolvePhaseChain(chain, phaseDescr);
         }
         if(chain.isEmpty()) {
-            throw new GrindException("Failed to resolve phase flow for the outcome of type " + type.getName());
+            throw new PhaseRouterException("Failed to resolve phase flow for the outcome of type " + type.getName());
         }
         return chain;
     }
 
-    private boolean resolvePhaseChain(List<PhaseDescription> chain, PhaseDescription phaseDescr) throws GrindException {
+    private boolean resolvePhaseChain(List<PhaseDescription> chain, PhaseDescription phaseDescr) throws PhaseRouterException {
         if(!phaseDescr.setFlag(PhaseDescription.VISITED)) {
             return false;
         }

@@ -21,11 +21,18 @@ package org.jboss.grind;
  *
  * @author Alexey Loubyansky
  */
-public interface ProcessContext {
+public class PhaseRouterException extends Exception {
 
-    void provide(Object value) throws GrindException;
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
 
-    <T> void provide(Class<T> type, T value) throws GrindException;
+    public PhaseRouterException(String message) {
+        super(message);
+    }
 
-    <T> T consume(Class<T> type) throws GrindException;
+    public PhaseRouterException(Throwable cause) {
+        super(cause);
+    }
 }

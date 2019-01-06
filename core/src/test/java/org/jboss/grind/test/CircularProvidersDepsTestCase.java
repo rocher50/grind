@@ -21,11 +21,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import org.jboss.grind.PhaseRouter;
-import org.jboss.grind.GrindException;
+import org.jboss.grind.PhaseRouterException;
 import org.jboss.grind.PhaseRouterFactory;
 import org.jboss.grind.PhaseHandler;
 import org.jboss.grind.PhaseRegistration;
-import org.jboss.grind.ProcessContext;
+import org.jboss.grind.PhaseProcessingContext;
 import org.junit.Test;
 
 /**
@@ -89,32 +89,32 @@ public class CircularProvidersDepsTestCase {
         final PhaseRouter router = PhaseRouterFactory.getInstance()
                 .addPhase(new PhaseHandler() {
                     @Override
-                    public void register(PhaseRegistration registration) throws GrindException {
+                    public void register(PhaseRegistration registration) throws PhaseRouterException {
                         registration.provides(Type1.class);
                         registration.consumes(Type2.class);
                     }
                     @Override
-                    public void process(ProcessContext ctx) throws GrindException {
+                    public void process(PhaseProcessingContext ctx) throws PhaseRouterException {
                         ctx.provide(Type1.class, new Type1(ctx.consume(Type2.class).text));
                     }})
                 .addPhase(new PhaseHandler() {
                     @Override
-                    public void register(PhaseRegistration registration) throws GrindException {
+                    public void register(PhaseRegistration registration) throws PhaseRouterException {
                         registration.provides(Type2.class);
                         registration.consumes(Type3.class);
                     }
                     @Override
-                    public void process(ProcessContext ctx) throws GrindException {
+                    public void process(PhaseProcessingContext ctx) throws PhaseRouterException {
                         ctx.provide(Type2.class, new Type2(ctx.consume(Type3.class).text));
                     }})
                 .addPhase(new PhaseHandler() {
                     @Override
-                    public void register(PhaseRegistration registration) throws GrindException {
+                    public void register(PhaseRegistration registration) throws PhaseRouterException {
                         registration.consumes(Type1.class);
                         registration.provides(Type3.class);
                     }
                     @Override
-                    public void process(ProcessContext ctx) throws GrindException {
+                    public void process(PhaseProcessingContext ctx) throws PhaseRouterException {
                         ctx.provide(Type3.class, new Type3(ctx.consume(Type1.class).text));
                     }})
                 .build();
@@ -122,7 +122,7 @@ public class CircularProvidersDepsTestCase {
         try {
             router.consume(Type1.class);
             fail();
-        } catch(GrindException e) {
+        } catch(PhaseRouterException e) {
             assertEquals("Failed to resolve phase flow for the outcome of type " + Type1.class.getName(), e.getMessage());
         }
     }
